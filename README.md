@@ -7,6 +7,4 @@ Now with more threading!
 Now with scrollable text!  
 Now with less waiting time!  
 Now with better code structure!  
-Now with more documentation!  
-
-Cheers.
+Now with more documentation!
