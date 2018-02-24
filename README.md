@@ -1,7 +1,7 @@
 # WordFinder
 Command line word finder with many options.
 
-Now with good looking GUI!
+Now with good looking GUI!\n
 Now with Google Search capability!
 Now with more threading!
 Now with scrollable text!
