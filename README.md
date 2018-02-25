@@ -1,5 +1,5 @@
-# WordFinder
-Command line word finder with many options.
+# SearchEngine
+Search Engine, local and online, with many options. Purely Python.
 
 Now with good looking GUI!  
 Now with Google Search capability!  
