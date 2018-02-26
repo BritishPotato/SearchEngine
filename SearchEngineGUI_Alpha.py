@@ -9,14 +9,14 @@ import tkinter.scrolledtext as tkst
 
 
 
-def searchModule(wordCheck, lineNumCheck="y", lineShowCheck="n", sensitiveCheck="n", 
-                 googleSearchCheck = "n", googleResultNum = 5):
+def searchEngineModule(wordCheck, lineNumCheck="True", lineShowCheck="False", sensitiveCheck="False", 
+                 googleSearchCheck = "False", googleResultNum = 5):
     """
     Print file name which has searched word within present directory.
     Optional keyword arguments:
-    lineNumCheck: Check if line number is shown ("y"/"n")
-    lineShowCheck: Check if the line the word is found in is shown ("y"/"n")
-    sensitiveCheck: Check if case-sensitive search or not ("y"/"n")
+    lineNumCheck: Check if line number is shown ("True"/"False")
+    lineShowCheck: Check if the line the word is found in is shown ("True"/"False")
+    sensitiveCheck: Check if case-sensitive search or not ("True"/"False")
     """
     extension_list = ["*.py", "*.txt"]
     foundCount = 0
@@ -30,16 +30,16 @@ def searchModule(wordCheck, lineNumCheck="y", lineShowCheck="n", sensitiveCheck=
                     lineNum += 1
                     for part in line.split():
                         if wordCheck in part or \
-                        sensitiveCheck == "n" and wordCheck.lower() in part.lower():
-                            if lineNumCheck == "y" and lineShowCheck == "y":
+                        sensitiveCheck == "False" and wordCheck.lower() in part.lower():
+                            if lineNumCheck == "True" and lineShowCheck == "True":
                                 data.append(file + ", line: " + str(lineNum) +
                                       "\n" + str(line + "\n"))
                                 #print(file + ", line: " + str(lineNum) +
                                 #      "\n" + str(line + "\n"))
-                            elif lineNumCheck == "y":
+                            elif lineNumCheck == "True":
                                 data.append(file + ", line: " + str(lineNum))
                                 #print(file + ", line: " + str(lineNum))
-                            elif lineShowCheck == "y":
+                            elif lineShowCheck == "True":
                                 data.append(file + "\n" + str(line))
                                 #print(file + "\n" + str(line))
                             else:
@@ -48,18 +48,22 @@ def searchModule(wordCheck, lineNumCheck="y", lineShowCheck="n", sensitiveCheck=
                             foundCount += 1
     
     data.append(str(foundCount) + " instances found.")
-    if googleSearchCheck == "y":
-        html = scrape_google(wordCheck, googleResultNum, "en")
-        if html:
-            data.append("\nGoogle Search results for " + wordCheck + "\n")
-            for html_title_dict in html:
-                data.append("Google Search result: " +  str(html_title_dict["rank"]) + 
-                            ", Title: " + html_title_dict["title"])
-                data.append("Description:")
-                data.append(html_title_dict["description"] + "\n")
-        else:
-            data.append("\nNo Google Search results found for " + wordCheck)
-    
+    if googleSearchCheck == "True":
+        try:
+            html = scrape_google(wordCheck, googleResultNum, "en")
+            if html:
+                data.append("\nGoogle Search results for " + wordCheck + "\n")
+                for html_title_dict in html:
+                    data.append("Google Search result: " +  str(html_title_dict["rank"]) + 
+                                ", Title: " + html_title_dict["title"])
+                    data.append("Description:")
+                    data.append(html_title_dict["description"] + "\n")
+            else:
+                data.append("\nNo Google Search results found for " + wordCheck)
+                
+        except Exception:
+            data.append("Unable to connect to the internet for Google Search")
+
     return data
 
 # Currently only prints, unused.                            
@@ -89,6 +93,7 @@ def interface(lineNumCheck="y", lineShowCheck="n", sensitiveCheck="n"):
 #lineShowCheck="n"
 #sensitiveCheck="n"
 #googleSearchCheck = "n"
+#googleResultNum = 5
 
 def searchEngineInterface(worspecificDirCheck = "n", lineNumCheck="y", lineShowCheck="n",
          sensitiveCheck="n", googleSearchCheck = "n", googleResultNum = 5):
@@ -237,6 +242,31 @@ class SearchEngineGUI(tkinter.Tk):
         self.entry.focus_set()
         self.entry.selection_range(0, tkinter.END)
         
+        # Initialize Option Variables
+#        specificDirCheck = "n"
+#        lineNumCheck="y"
+#        lineShowCheck="n"
+#        sensitiveCheck="n"
+#        googleSearchCheck = "n"
+#        googleResultNum = 5
+        
+        self.specificDirCheck = tkinter.StringVar()
+        self.specificDirCheck.set("False")
+        self.lineNumCheck = tkinter.StringVar()
+        self.lineNumCheck.set("True")
+        self.lineShowCheck = tkinter.StringVar()
+        self.lineShowCheck.set("False")
+        self.sensitiveCheck = tkinter.StringVar()
+        self.sensitiveCheck.set("False")
+        self.googleSearchCheck = tkinter.StringVar()
+        self.googleSearchCheck.set("False")
+        self.googleResultNum = tkinter.StringVar()
+        self.googleResultNum.set("5")
+        
+        #self.OptionsMenu()
+        
+        #self.toplevel.withdraw()
+        
     # ADD EVENT HANDLER (2)
     def FireSearch(self, event=None):
         self.wordCheck = self.entryVariable.get()
@@ -250,8 +280,12 @@ class SearchEngineGUI(tkinter.Tk):
             # insert main code here
             #longProcess()
             #data = main()
-            data = searchEngine(self.wordCheck, lineNumCheck="y", lineShowCheck="n", 
-                                sensitiveCheck="n", googleSearchCheck = "y", googleResultNum = 5)
+            data = searchEngineModule(self.wordCheck, 
+                                      lineNumCheck=self.lineNumCheck.get(),
+                                      lineShowCheck=self.lineShowCheck.get(), 
+                                      sensitiveCheck=self.sensitiveCheck.get(), 
+                                      googleSearchCheck=self.googleSearchCheck.get(),
+                                      googleResultNum = int(self.googleResultNum.get()))
             
             self.labelVariable.config(state=tkinter.NORMAL)
             self.labelVariable.delete("1.0", tkinter.END)
@@ -266,9 +300,205 @@ class SearchEngineGUI(tkinter.Tk):
         callback(self)
         self.entry.focus_set()
         self.entry.selection_range(0, tkinter.END)
-        
+    
+    
+#    def FireOptions(self):
+#        self.toplevel.deiconify()
+    
+    
     def FireOptions(self):
-        pass
+        toplevel = self.toplevel = tkinter.Toplevel(self)
+        toplevel.title('Search Options')
+        
+        toplevel.grid()
+        
+        self.labelSDCvar = tkinter.StringVar(toplevel)
+        self.labelSDCvar.set(u"Check for specific directory: " + self.specificDirCheck.get())
+        self.labelSDC = tkinter.Label(toplevel, textvariable=self.labelSDCvar, anchor="w")
+        self.labelSDC.grid(column=1, row=0, sticky='W')
+       
+        buttonTrue0 = tkinter.Button(master=toplevel, text="True", command= self.SDCButtonTrue)
+        buttonTrue0.grid(column=2, row=0, sticky="E")
+        buttonFalse0 = tkinter.Button(master=toplevel, text="False", command = self.SDCButtonFalse)
+        buttonFalse0.grid(column=3, row=0, sticky="E")
+        
+        
+        self.labelLNCvar = tkinter.StringVar(toplevel)
+        self.labelLNCvar.set(u"Show the line number of searched term: " + self.lineNumCheck.get())
+        self.labelLNC = tkinter.Label(toplevel, textvariable=self.labelLNCvar, anchor="w")
+        self.labelLNC.grid(column=1, row=1, sticky='W')
+        
+        buttonTrue1 = tkinter.Button(master=toplevel, text="True", command= self.LNCButtonTrue)
+        buttonTrue1.grid(column=2, row=1, sticky="E")
+        buttonFalse1 = tkinter.Button(master=toplevel, text="False", command = self.LNCButtonFalse)
+        buttonFalse1.grid(column=3, row=1, sticky="E")
+        
+        
+        self.labelLSCvar = tkinter.StringVar(toplevel)
+        self.labelLSCvar.set(u"Show full line: " + self.lineShowCheck.get())
+        self.labelLSC = tkinter.Label(toplevel, textvariable=self.labelLSCvar, anchor="w")
+        self.labelLSC.grid(column=1, row=2, sticky='W')
+        
+        buttonTrue2 = tkinter.Button(master=toplevel, text="True", command= self.LSCButtonTrue)
+        buttonTrue2.grid(column=2, row=2, sticky="E")
+        buttonFalse2 = tkinter.Button(master=toplevel, text="False", command = self.LSCButtonFalse)
+        buttonFalse2.grid(column=3, row=2, sticky="E")
+        
+
+        self.labelSCvar = tkinter.StringVar(toplevel)
+        self.labelSCvar.set(u"Do a case-sensitive search: " + self.sensitiveCheck.get())
+        self.labelSC = tkinter.Label(toplevel, textvariable=self.labelSCvar, anchor="w")
+        self.labelSC.grid(column=1, row=3, sticky='W')
+        
+        buttonTrue3 = tkinter.Button(master=toplevel, text="True", command= self.SCButtonTrue)
+        buttonTrue3.grid(column=2, row=3, sticky="E")
+        buttonFalse3 = tkinter.Button(master=toplevel, text="False", command = self.SCButtonFalse)
+        buttonFalse3.grid(column=3, row=3, sticky="E")
+        
+        
+        self.labelGSCvar = tkinter.StringVar(toplevel)
+        self.labelGSCvar.set(u"Do a Google Search for the word: " + self.googleSearchCheck.get())
+        self.labelGSC = tkinter.Label(toplevel, textvariable=self.labelGSCvar, anchor="w")
+        self.labelGSC.grid(column=1, row=4, sticky='W')
+        
+        buttonTrue4 = tkinter.Button(master=toplevel, text="True", command= self.GSCButtonTrue)
+        buttonTrue4.grid(column=2, row=4, sticky="E")
+        buttonFalse4 = tkinter.Button(master=toplevel, text="False", command = self.GSCButtonFalse)
+        buttonFalse4.grid(column=3, row=4, sticky="E")
+        
+        
+        self.labelGRNvar = tkinter.StringVar(toplevel)
+        self.labelGRNvar.set(u"Show how many results: " + self.googleResultNum.get())
+        self.labelGRN = tkinter.Label(toplevel, textvariable=self.labelGRNvar, anchor="w")
+        self.labelGRN.grid(column=1, row=5, sticky='W')
+        
+        self.numlabelGRNvar = tkinter.StringVar(toplevel)
+        self.numlabelGRNvar.set("Enter a number:")
+        self.numlabelGRN = tkinter.Label(toplevel, textvariable=self.numlabelGRNvar, anchor="w")
+        self.numlabelGRN.grid(column=2, row=5, sticky="WE")
+        
+        self.entryGRNvar = tkinter.StringVar(toplevel)
+        self.entryGRN = tkinter.Entry(toplevel,textvariable=self.entryGRNvar)
+        self.entryGRN.config(justify=tkinter.CENTER, width=5)
+        self.entryGRN.grid(column=3,row=5,)
+        self.entryGRN.bind("<Return>", self.GRNOnPressEnter)
+        #self.entryGRNvar.set(u"")
+        
+        
+#        buttonTrue5 = tkinter.Button(master=toplevel, text="True", command= self.GRNButtonTrue)
+#        buttonTrue5.grid(column=2, row=5, sticky="E")
+#        buttonFalse5 = tkinter.Button(master=toplevel, text="False", command = self.GRNButtonFalse)
+#        buttonFalse5.grid(column=3, row=5, sticky="E")
+        
+        
+        for row_num in range(toplevel.grid_size()[1]):
+            toplevel.rowconfigure(row_num, weight=1)
+        toplevel.columnconfigure(2, weight=1)    
+        toplevel.columnconfigure(3, weight=1)
+        
+        toplevel.resizable(False,False)
+        toplevel.minsize(300,200)
+        toplevel.focus_set()
+        
+        
+    def SDCButtonTrue(self):
+        self.specificDirCheck.set("True")
+        self.labelSDCvar.set(u"Check for specific directory: " + self.specificDirCheck.get())
+        
+    def SDCButtonFalse(self):
+        self.specificDirCheck.set("False")
+        self.labelSDCvar.set(u"Check for specific directory: " + self.specificDirCheck.get())
+        
+    def LNCButtonTrue(self):
+        self.lineNumCheck.set("True")
+        self.labelLNCvar.set(u"Show the line number of searched term: " + self.lineNumCheck.get())
+        
+    def LNCButtonFalse(self):
+        self.lineNumCheck.set("False")
+        self.labelLNCvar.set(u"Show the line number of searched term: " + self.lineNumCheck.get())
+        
+    def LSCButtonTrue(self):
+        self.lineShowCheck.set("True")
+        self.labelLSCvar.set(u"Show full line: " + self.lineShowCheck.get())
+        
+    def LSCButtonFalse(self):
+        self.lineShowCheck.set("False")
+        self.labelLSCvar.set(u"Show full line: " + self.lineShowCheck.get())
+        
+    def SCButtonTrue(self):
+        self.sensitiveCheck.set("True")
+        self.labelSCvar.set(u"Do a case-sensitive search: " + self.sensitiveCheck.get())
+
+    def SCButtonFalse(self):
+        self.sensitiveCheck.set("False")
+        self.labelSCvar.set(u"Do a case-sensitive search: " + self.sensitiveCheck.get())
+        
+    def GSCButtonTrue(self):
+        self.googleSearchCheck.set("True")
+        self.labelGSCvar.set(u"Do a Google Search for the word: " + self.googleSearchCheck.get())
+        
+    def GSCButtonFalse(self):
+        self.googleSearchCheck.set("False")
+        self.labelGSCvar.set(u"Do a Google Search for the word: " + self.googleSearchCheck.get())
+        
+    def GRNOnPressEnter(self,event):
+        try:
+            if int(self.entryGRNvar.get()) > 100:
+                self.googleResultNum.set("100")
+                self.entryGRNvar.set("100")
+            elif int(self.entryGRNvar.get()) < 10:
+                self.googleResultNum.set("1")
+                self.entryGRNvar.set("1")
+            else:
+                self.googleResultNum.set(self.entryGRNvar.get())
+        except:
+            self.entryGRNvar.set(u"NUM")
+        self.labelGRNvar.set(u"Show how many results: " + self.googleResultNum.get())
+        self.entryGRN.focus_set()
+        self.entryGRN.selection_range(0, tkinter.END)
+        
+
+        
+#    def GRNButtonTrue(self):
+#        self.googleResultNum.set("True")
+#        self.labelGRNvar.set(u"Show how many results: " + self.googleResultNum.get())
+#        
+#    def GRNButtonFalse(self):
+#        self.googleResultNum.set("False")
+#        self.labelGRNvar.set(u"Show how many results: " + self.googleResultNum.get())
+        
+        
+        
+#class Options (tkinter.Frame, SearchEngineGUI):
+#    def __init__(self, parent, controller):
+#        tkinter.Frame.__init__(self, parent)
+#        self.controller = controller
+#        self.initialise()
+
+
+#        specificDirCheck = tkinter.StringVar(toplevel)
+#        specificDirCheck.set("True")
+#        
+#        buttonTrue1 = tkinter.Button(toplevel, text="True", command= specificDirCheck.set("y"))
+#        buttonTrue1.grid(column=2, row=0, sticky="E")
+#        buttonFalse1 = tkinter.Button(toplevel, text="False", command= specificDirCheck.set("n"))
+#        buttonFalse1.grid(column=3, row=0, sticky="E")
+#        
+
+        
+
+        
+        
+        #pass
+        #self.withdraw()
+        #self.newWindow = tkinter.Toplevel(self.master)
+        
+        #optionSpecificDirCheck = tkinter.OptionMenu(toplevel, specificDirCheck, "True", "False")
+        #optionSpecificDirCheck.grid(column=1, row=0)
+        
+        #
+        # test stuff
+
 
 #    def OnButtonClick(self):
 #        wordCheck = self.entryVariable.get()
@@ -352,12 +582,20 @@ Added ScrollText functionality
 Disabled edit ability of label for user
 Stickied scrolled text to sides of window
 Added "No results found" for Google Search
+Added Options button, fixed visuals.
+Added check for connection.
+Replaced prints with return's
+MAJOR: Added successful Options Menu with fully functional buttons
+Changed searchEngineModule's "y"/"n" binary to "True"/"False"
+Removed threading, no need.
+Established fully working tkinter interface.
+Added additional entry for number check in googleResultNum
+Added check if int, show "NUMBER please" if not
+
 
 TODO
 Use tkinter, establish interface:
-    Replace print's with return for tkinter
     Make "Search" button turn to "Stop" when waiting for thread.
-    If pressed, make it stop the thread.
 Make main() and searchEngine() into class
 Clean up google search result
 Add interface to change and view options instead of part by part
