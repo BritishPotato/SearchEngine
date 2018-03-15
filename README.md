@@ -1,10 +1,10 @@
 # SearchEngine
 Search Engine, local and online, with many options. Purely Python.
 
-Required Modules:
+## Required Modules:
 - tkinter (for GUI framework)
 
-Updates:
+## Latest Updates:
 - Now with good looking GUI!  
 - Now with Google Search capability!  
 - Now with more threading!  
