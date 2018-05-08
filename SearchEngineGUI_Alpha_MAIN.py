@@ -2,9 +2,10 @@ import glob
 import os
 import os.path
 import sys
-from ScrapeGoogle import fetch_results, parse_results, scrape_google
+from ScrapeGoogle import scrape_google
 import tkinter
 import tkinter.scrolledtext as tkst
+from tkinter import filedialog
 #import threading
 
 
@@ -20,8 +21,7 @@ def searchEngineModule(wordCheck, lineNumCheck="True", lineShowCheck="False", se
     """
     extension_list = ["*.py", "*.txt"]
     foundCount = 0
-    data = []
-    
+    data = [os.getcwd()]
     for extension in extension_list:
         for file in glob.glob(extension):
             with open(file, encoding="Latin-1") as openfile:
@@ -47,7 +47,7 @@ def searchEngineModule(wordCheck, lineNumCheck="True", lineShowCheck="False", se
                                 #print(file)
                             foundCount += 1
     
-    data.append(str(foundCount) + " instances found.")
+    data.append(str(foundCount) + " instances found. \n")
     if googleSearchCheck == "True":
         try:
             html = scrape_google(wordCheck, googleResultNum, "en")
@@ -280,7 +280,10 @@ class SearchEngineGUI(tkinter.Tk):
             # insert main code here
             #longProcess()
             #data = main()
-            data = searchEngineModule(self.wordCheck, 
+            data = []
+            for dirpath, dirnames, filenames in os.walk(os.getcwd()):
+                os.chdir(dirpath)
+                data += searchEngineModule(self.wordCheck, 
                                       lineNumCheck=self.lineNumCheck.get(),
                                       lineShowCheck=self.lineShowCheck.get(), 
                                       sensitiveCheck=self.sensitiveCheck.get(), 
@@ -322,65 +325,74 @@ class SearchEngineGUI(tkinter.Tk):
         buttonFalse0 = tkinter.Button(master=toplevel, text="False", command = self.SDCButtonFalse)
         buttonFalse0.grid(column=3, row=0, sticky="E")
         
+        self.directoryVar = tkinter.StringVar(toplevel)
+        current_directory = filedialog.askdirectory()
+        #os.file_path = os.path.join(current_directory)
+        os.chdir(current_directory)
+        #self.labelSDC1 = tkinter.Label(toplevel, textvariable=self.directoryVar, anchor="w")
+        #self.labelSDC1.grid(column=1, row=1, columnspan=3 sticky='W') 
+        self.buttonDirectory = tkinter.Button(master=toplevel, text="...", command= self.SDCButtonCurrentDir)
+        self.buttonDirectory.grid(column=1, row=1, columnspan=3, sticky="WE")
+        
         
         self.labelLNCvar = tkinter.StringVar(toplevel)
         self.labelLNCvar.set(u"Show the line number of searched term: " + self.lineNumCheck.get())
         self.labelLNC = tkinter.Label(toplevel, textvariable=self.labelLNCvar, anchor="w")
-        self.labelLNC.grid(column=1, row=1, sticky='W')
+        self.labelLNC.grid(column=1, row=2, sticky='W')
         
         buttonTrue1 = tkinter.Button(master=toplevel, text="True", command= self.LNCButtonTrue)
-        buttonTrue1.grid(column=2, row=1, sticky="E")
+        buttonTrue1.grid(column=2, row=2, sticky="E")
         buttonFalse1 = tkinter.Button(master=toplevel, text="False", command = self.LNCButtonFalse)
-        buttonFalse1.grid(column=3, row=1, sticky="E")
+        buttonFalse1.grid(column=3, row=2, sticky="E")
         
         
         self.labelLSCvar = tkinter.StringVar(toplevel)
         self.labelLSCvar.set(u"Show full line: " + self.lineShowCheck.get())
         self.labelLSC = tkinter.Label(toplevel, textvariable=self.labelLSCvar, anchor="w")
-        self.labelLSC.grid(column=1, row=2, sticky='W')
+        self.labelLSC.grid(column=1, row=3, sticky='W')
         
         buttonTrue2 = tkinter.Button(master=toplevel, text="True", command= self.LSCButtonTrue)
-        buttonTrue2.grid(column=2, row=2, sticky="E")
+        buttonTrue2.grid(column=2, row=3, sticky="E")
         buttonFalse2 = tkinter.Button(master=toplevel, text="False", command = self.LSCButtonFalse)
-        buttonFalse2.grid(column=3, row=2, sticky="E")
+        buttonFalse2.grid(column=3, row=3, sticky="E")
         
 
         self.labelSCvar = tkinter.StringVar(toplevel)
         self.labelSCvar.set(u"Do a case-sensitive search: " + self.sensitiveCheck.get())
         self.labelSC = tkinter.Label(toplevel, textvariable=self.labelSCvar, anchor="w")
-        self.labelSC.grid(column=1, row=3, sticky='W')
+        self.labelSC.grid(column=1, row=4, sticky='W')
         
         buttonTrue3 = tkinter.Button(master=toplevel, text="True", command= self.SCButtonTrue)
-        buttonTrue3.grid(column=2, row=3, sticky="E")
+        buttonTrue3.grid(column=2, row=4, sticky="E")
         buttonFalse3 = tkinter.Button(master=toplevel, text="False", command = self.SCButtonFalse)
-        buttonFalse3.grid(column=3, row=3, sticky="E")
+        buttonFalse3.grid(column=3, row=4, sticky="E")
         
         
         self.labelGSCvar = tkinter.StringVar(toplevel)
         self.labelGSCvar.set(u"Do a Google Search for the word: " + self.googleSearchCheck.get())
         self.labelGSC = tkinter.Label(toplevel, textvariable=self.labelGSCvar, anchor="w")
-        self.labelGSC.grid(column=1, row=4, sticky='W')
+        self.labelGSC.grid(column=1, row=5, sticky='W')
         
         buttonTrue4 = tkinter.Button(master=toplevel, text="True", command= self.GSCButtonTrue)
-        buttonTrue4.grid(column=2, row=4, sticky="E")
+        buttonTrue4.grid(column=2, row=5, sticky="E")
         buttonFalse4 = tkinter.Button(master=toplevel, text="False", command = self.GSCButtonFalse)
-        buttonFalse4.grid(column=3, row=4, sticky="E")
+        buttonFalse4.grid(column=3, row=5, sticky="E")
         
         
         self.labelGRNvar = tkinter.StringVar(toplevel)
         self.labelGRNvar.set(u"Show how many results: " + self.googleResultNum.get())
         self.labelGRN = tkinter.Label(toplevel, textvariable=self.labelGRNvar, anchor="w")
-        self.labelGRN.grid(column=1, row=5, sticky='W')
+        self.labelGRN.grid(column=1, row=6, sticky='W')
         
         self.numlabelGRNvar = tkinter.StringVar(toplevel)
         self.numlabelGRNvar.set("Enter a number:")
         self.numlabelGRN = tkinter.Label(toplevel, textvariable=self.numlabelGRNvar, anchor="w")
-        self.numlabelGRN.grid(column=2, row=5, sticky="WE")
+        self.numlabelGRN.grid(column=2, row=6, sticky="WE")
         
         self.entryGRNvar = tkinter.StringVar(toplevel)
         self.entryGRN = tkinter.Entry(toplevel,textvariable=self.entryGRNvar)
         self.entryGRN.config(justify=tkinter.CENTER, width=5)
-        self.entryGRN.grid(column=3,row=5,)
+        self.entryGRN.grid(column=3,row=6,)
         self.entryGRN.bind("<Return>", self.GRNOnPressEnter)
         #self.entryGRNvar.set(u"")
         
@@ -397,7 +409,7 @@ class SearchEngineGUI(tkinter.Tk):
         toplevel.columnconfigure(3, weight=1)
         
         toplevel.resizable(False,False)
-        toplevel.minsize(300,200)
+        toplevel.minsize(400,200)
         toplevel.focus_set()
         
         
@@ -408,6 +420,10 @@ class SearchEngineGUI(tkinter.Tk):
     def SDCButtonFalse(self):
         self.specificDirCheck.set("False")
         self.labelSDCvar.set(u"Check for specific directory: " + self.specificDirCheck.get())
+        
+    def SDCButtonCurrentDir(self):
+        return None
+        #self.
         
     def LNCButtonTrue(self):
         self.lineNumCheck.set("True")

@@ -5,11 +5,14 @@ import sys
 from ScrapeGoogle import fetch_results, parse_results, scrape_google
 import tkinter
 import tkinter.scrolledtext as tkst
-import threading
+#import threading
 
-def searchEngine(wordCheck, lineNumCheck="y", lineShowCheck="n", sensitiveCheck="n"):
+
+
+def searchEngineModule(wordCheck, lineNumCheck="y", lineShowCheck="n", sensitiveCheck="n", 
+                 googleSearchCheck = "n", googleResultNum = 5):
     """
-    Print file name (.py) which has searched word within present directory.
+    Print file name which has searched word within present directory.
     Optional keyword arguments:
     lineNumCheck: Check if line number is shown ("y"/"n")
     lineShowCheck: Check if the line the word is found in is shown ("y"/"n")
@@ -45,7 +48,22 @@ def searchEngine(wordCheck, lineNumCheck="y", lineShowCheck="n", sensitiveCheck=
                             foundCount += 1
     
     data.append(str(foundCount) + " instances found.")
-    
+    if googleSearchCheck == "y":
+        try:
+            html = scrape_google(wordCheck, googleResultNum, "en")
+            if html:
+                data.append("\nGoogle Search results for " + wordCheck + "\n")
+                for html_title_dict in html:
+                    data.append("Google Search result: " +  str(html_title_dict["rank"]) + 
+                                ", Title: " + html_title_dict["title"])
+                    data.append("Description:")
+                    data.append(html_title_dict["description"] + "\n")
+            else:
+                data.append("\nNo Google Search results found for " + wordCheck)
+                
+        except Exception:
+            data.append("Unable to connect to the internet for Google Search")
+
     return data
 
 # Currently only prints, unused.                            
@@ -70,14 +88,15 @@ def interface(lineNumCheck="y", lineShowCheck="n", sensitiveCheck="n"):
 #os.chdir("/")
 
 # Default options initialized.
-specificDirCheck = "n"
-lineNumCheck="y"
-lineShowCheck="n"
-sensitiveCheck="n"
-googleSearchCheck = "n"
+#specificDirCheck = "n"
+#lineNumCheck="y"3
+#lineShowCheck="n"
+#sensitiveCheck="n"
+#googleSearchCheck = "n"
+#googleResultNum = 5
 
-def main(specificDirCheck = "n",lineNumCheck="y",lineShowCheck="n",
-         sensitiveCheck="n",googleSearchCheck = "n"):
+def searchEngineInterface(worspecificDirCheck = "n", lineNumCheck="y", lineShowCheck="n",
+         sensitiveCheck="n", googleSearchCheck = "n", googleResultNum = 5):
     
     wordCheck = input("Please enter the word you wish to search for, or write "
                       "'exit' to exit: ")
@@ -97,21 +116,22 @@ def main(specificDirCheck = "n",lineNumCheck="y",lineShowCheck="n",
     print("\n")
     if specificDirCheck == "y":
         os.chdir(chdr)
-        searchEngine(wordCheck, lineNumCheck, lineShowCheck, sensitiveCheck)
+        searchEngineModule(wordCheck, lineNumCheck, lineShowCheck, 
+                     sensitiveCheck, googleSearchCheck, googleResultNum)
     else:
         # Walk through files and directories in current working directory
         for dirpath, dirnames, filenames in os.walk(os.getcwd()):
             os.chdir(dirpath)
-            searchEngine(wordCheck, lineNumCheck, lineShowCheck, sensitiveCheck)
+            searchEngineModule(wordCheck, lineNumCheck, lineShowCheck, 
+                         sensitiveCheck, googleSearchCheck, googleResultNum)
     
-    if googleSearchCheck == "y":
-        print(scrape_google(wordCheck, googleResultNum, "en"))
+
 
 
 
 # THE CLASS
 # .tk is the base class for standard windows.
-class WordFinder(tkinter.Tk):
+class SearchEngineGUI(tkinter.Tk):
     # THE CONSTRUCTOR
     def __init__(self,parent):
         # A GUI is a hierarchy of objects, each GUI element has a parent.
@@ -126,6 +146,8 @@ class WordFinder(tkinter.Tk):
         # Best to have the code which creates all the GUI elements seperate from
         # the logic of the program. This eases transition to multi-threaded programming.
         self.initialize()
+        
+        #self.Options = Options()
     
     def initialize(self):
         # LAYOUT MANAGER
@@ -165,7 +187,7 @@ class WordFinder(tkinter.Tk):
         # We then bind these methods to the widgets.
         # <Return> is the key we want to catch.
         # self.OnPressEnter is the method we want to fire when event is catched.
-        self.entry.bind("<Return>", self.FireEvent)
+        self.entry.bind("<Return>", self.FireSearch)
         
         # command=self.OnButtonClick is added to button, see next statement.
         # button is the widget on which we want to catch an event.
@@ -182,8 +204,12 @@ class WordFinder(tkinter.Tk):
         # alter the value later. The u before "Search" means use the unicode type
         # rather than the usual string.
         button = tkinter.Button(self, text=u"Search",
-                                command=self.FireEvent)
+                                command=self.FireSearch)
         button.grid(column=1, row=0)
+        
+        # Second button for options
+        buttonOptions = tkinter.Button(self, text=u"Options", command = self.FireOptions)
+        buttonOptions.grid(column=2, row=0)
         
         # ADD LABEL
         # We make the label into a string variable to read and write with labelVariable
@@ -195,13 +221,14 @@ class WordFinder(tkinter.Tk):
         #DEPRECEATED                      anchor="w", fg="white", bg="blue")
         # USE SCROLLEDTEXT INSTEAD FOR LONG LIST 
         self.labelVariable = tkst.ScrolledText()
-        self.labelVariable.grid(column=0, row=1, columnspan=2, sticky="EW")
-        self.labelVariable.insert(tkinter.END, u"Hello !")
+        self.labelVariable.grid(column=0, row=1, columnspan=3, sticky="NSEW")
+        self.labelVariable.insert(tkinter.END, u"What would you like to search?")
         
         # ENABLE RESIZING
         # Tells layout manager to resize columns and rows when window is resized.
         # However, this only resizes the first column (0)
         self.grid_columnconfigure(0,weight=1)
+        self.grid_rowconfigure(1, weight=1)
         
         # ADD CONSTRAINT FOR WINDOW RESIZING
         # self.resizable(#WIDTH, #HEIGHT)
@@ -218,30 +245,143 @@ class WordFinder(tkinter.Tk):
         self.entry.selection_range(0, tkinter.END)
         
     # ADD EVENT HANDLER (2)
-    def FireEvent(self):
+    def FireSearch(self, event=None):
         self.wordCheck = self.entryVariable.get()
-        def callback():
-            self.labelVariable.config(state=tkinter.NORMAL)
-            self.labelVariable.delete("1.0", tkinter.END)
-            self.labelVariable.insert("1.0","Please Wait...")
-            self.labelVariable.config(state=tkinter.DISABLED)
-            
+        self.labelVariable.config(state=tkinter.NORMAL)
+        self.labelVariable.delete("1.0", tkinter.END)
+        self.labelVariable.insert("1.0","Searching for " + self.wordCheck + "...")
+        self.labelVariable.config(state=tkinter.DISABLED)
+        
+        def callback(self):
+
             # insert main code here
             #longProcess()
             #data = main()
-            data = ["kek\n \n lololo"]
+            data = searchEngineModule(self.wordCheck, lineNumCheck="y", lineShowCheck="n", 
+                                sensitiveCheck="n", googleSearchCheck = "y", googleResultNum = 5)
             
             self.labelVariable.config(state=tkinter.NORMAL)
             self.labelVariable.delete("1.0", tkinter.END)
+            self.labelVariable.insert("1.0", "Results for \"" + self.wordCheck + "\"\n")
+            
             for i in data:
                 self.labelVariable.insert("end", i + "\n")
             self.labelVariable.config(state=tkinter.DISABLED)
         
-        t = threading.Thread(target=callback)
-        t.start()
+        #t = threading.Thread(target=callback)
+        #t.start()
+        callback(self)
         self.entry.focus_set()
         self.entry.selection_range(0, tkinter.END)
         
+    def FireOptions(self):
+        Options(self)
+        
+#        toplevel = tkinter.Toplevel()
+#        toplevel.title('Search Options')
+#        
+##        specificDirCheck = "n"
+##        lineNumCheck="y"
+##        lineShowCheck="n"
+##        sensitiveCheck="n"
+##        googleSearchCheck = "n"
+##        googleResultNum = 5
+#        
+#        self.specificDirCheck = tkinter.StringVar()
+#        self.specificDirCheck.set("True")
+#
+#
+#        toplevel.grid()
+#        
+#        self.labelSDCvar = tkinter.StringVar()
+#        self.labelSDCvar.set(u"Check for specific directory: " + self.specificDirCheck.get())
+#        labelSDC = tkinter.Label(toplevel, textvariable=self.labelVariable, anchor="w")
+#        labelSDC.grid(column=0, row=0, sticky='W')
+#
+#        
+#        specificDirCheck = tkinter.StringVar(toplevel)
+#        specificDirCheck.set("True")
+#        
+#        buttonTrue1 = tkinter.Button(master=toplevel, text="True", command= self.SDCButtonTrue)
+#        buttonTrue1.grid(column=2, row=0, sticky="E")
+#        buttonFalse1 = tkinter.Button(master=toplevel, text="False", command = self.SDCButtonFalse)
+#        buttonFalse1.grid(column=3, row=0, sticky="E")
+#        
+#        def SDCButtonTrue(self):
+#            self.specificDirCheck.set("True")
+#            self.labelSDCvar.set(u"Check for specific directory: " + specificDirCheck.get())
+#            
+#        def SDCButtonFalse(self):
+#            self.specificDirCheck.set("False")
+#            self.labelSDCvar.set(u"Check for specific directory: " + specificDirCheck.get())
+        
+        
+class Options (tkinter.Frame):
+    def __init__(self, parent):    #, controller):
+        #tkinter.Toplevel.__init__(self, parent)
+        self = tkinter.Toplevel()
+        
+        
+        #self.controller = controller
+        self.parent = parent
+        self.initialize()
+
+
+#        specificDirCheck = tkinter.StringVar(toplevel)
+#        specificDirCheck.set("True")
+#        
+#        buttonTrue1 = tkinter.Button(toplevel, text="True", command= specificDirCheck.set("y"))
+#        buttonTrue1.grid(column=2, row=0, sticky="E")
+#        buttonFalse1 = tkinter.Button(toplevel, text="False", command= specificDirCheck.set("n"))
+#        buttonFalse1.grid(column=3, row=0, sticky="E")
+#        
+
+    def initialize(self):
+        self.grid()
+
+        self.entryVariable = tkinter.StringVar()
+        self.entry = tkinter.Entry(self,textvariable=self.entryVariable)
+        self.entry.grid(column=0,row=0,sticky='EW')
+        self.entry.bind("<Return>", self.OnPressEnter)
+        self.entryVariable.set(u"Enter text here.")
+
+        button = tkinter.Button(self,text=u"Click me !",
+                                command=self.OnButtonClick)
+        button.grid(column=1,row=0)
+
+        self.labelVariable = tkinter.StringVar()
+        label = tkinter.Label(self,textvariable=self.labelVariable,
+                              anchor="w",fg="white",bg="blue")
+        label.grid(column=0,row=1,columnspan=2,sticky='EW')
+        self.labelVariable.set(u"Hello !")
+
+        self.grid_columnconfigure(0,weight=1)
+        self.resizable(True,False)
+        self.update()
+        self.geometry(self.geometry())       
+        self.entry.focus_set()
+        self.entry.selection_range(0, tkinter.END)
+
+        
+        for row_num in range(self.grid_size()[1]):
+            self.rowconfigure(row_num, weight=1)
+        
+        
+        self.resizable(False,False)
+        self.minsize(200,200)
+        self.focus_set()
+        
+        
+        
+        #pass
+        #self.withdraw()
+        #self.newWindow = tkinter.Toplevel(self.master)
+        
+        #optionSpecificDirCheck = tkinter.OptionMenu(toplevel, specificDirCheck, "True", "False")
+        #optionSpecificDirCheck.grid(column=1, row=0)
+        
+        #
+        # test stuff
 
 
 #    def OnButtonClick(self):
@@ -256,8 +396,8 @@ class WordFinder(tkinter.Tk):
 if __name__ == "__main__":
     # Class instanciated. No parent is given because it's the first GUI element
     # to be created.
-    app = WordFinder(None)
-    app.title("Word Finder")
+    app = SearchEngineGUI(None)
+    app.title("Search Engine GUI")
     
     # MINIMUM WINDOW SIZE
     # Put after initializing and before mainloop().
@@ -324,6 +464,10 @@ Removed useless lineNum in main()
 Removed unnecessary global designations, moved result to searchEngine()
 Added ScrollText functionality
 Disabled edit ability of label for user
+Stickied scrolled text to sides of window
+Added "No results found" for Google Search
+Added Options button, fixed visuals.
+Added check for connection.
 
 TODO
 Use tkinter, establish interface:
